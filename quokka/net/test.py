@@ -27,10 +27,27 @@ class TestTopo(TestCase):
     def testFlowMap(self):
         flowMap = FlowMap()
         flowMap.addFlow(0, 1, 100)
-        self.assertTrue(flowMap.getFlow(0, 1) == 100)
+        self.assertTrue(flowMap.getFlow(0, 1).size == 100)
         flowMap.delFlow(0, 1)
         self.assertFalse(flowMap.isFlowExist(0, 1))
-        flowMap.delFlow(0, 1)
+        flowMap.addFlow(0, 1, 100)
+        flowMap.addFlow(1, 2, 100)
+        for i,j in flowMap.table.iteritems():
+            for k,l in j.iteritems():
+                print 'flow[%d][%d] = [%d]' % (i,k,l.size)
+
+    def testMatrix(self):
+        mat = [[1,2],[3,4]]
+        print mat[0][:]
+
+    def testLst(self):
+        lst = [1,2,3]
+        lst2 = lst
+        lst2[1] = 4 
+        a = 1
+        lst = [a]
+        lst.append(a)
+        print lst
 
 if __name__ == '__main__':
     unittest.main()

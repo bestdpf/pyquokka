@@ -42,6 +42,9 @@ class Host(Node):
     def __init__(self, hostID):
         Node.__init__(self, ndType='host', ID=hostID)
 
+    def setSwitch(self, switchID, dis):
+        self.switchID = switchID
+        self.dis = dis
 
 class Switch(Node):
 
@@ -54,8 +57,31 @@ class Pool(Node):
     def __init__(self, poolID):
         Node.__init__(self, ndType='pool', ID=poolID)
 
+    def setSwitch(self, switchID, dis):
+        self.switchID = switchID
+        self.dis = dis
 
 class MB(Node):
 
     def __init__(self, MBID):
         Node.__init__(self, ndType='MB', ID=MBID)
+
+    def setName(self, name):
+        self.name = name
+
+    def delay(self, flowNum):
+        return 0
+
+    def setPool(self, poolID, dis):
+        self.poolID = poolID
+        self.dis = dis
+
+class Proxy(MB):
+
+    def __init__(self, MBID):
+        MB.__init__(self, MBID)
+        setName('proxy')
+
+    def delay(self, flowNum):
+        return 0  
+
