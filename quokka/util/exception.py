@@ -18,3 +18,9 @@ class FlowException(QuokkaBaseException):
     def __init__(self, value):
         QuokkaBaseException.__init__(self, value)
         self.area = 'flow'
+
+class AlgException(QuokkaBaseException):
+
+    def __init__(self, value):
+        QuokkaBaseException.__init__(self, value)
+        self.area = 'alg'

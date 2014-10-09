@@ -1,5 +1,6 @@
 from collections import defaultdict as multimap
 from quokka.util.exception import FlowException
+from quokka.util.ds import *
 
 class Flow(object):
 
@@ -22,16 +23,19 @@ class Flow(object):
 class FlowMap(object):
 
     def __init__(self):
-        self.table = self.__table__()
-
+        #self.table = self.__table__()
+        self.table = TwoDMap()
+    """
     def __table__(self):
         return multimap(self.__table__)
+    """
 
     def addFlow(self, src, dst, size, proc = [] ):
         self.table[src][dst] = Flow(src, dst, size, proc)
 
     def isFlowExist(self, src, dst):
-        return self.table[src][dst] != self.__table__()    
+        #return self.table[src][dst] != self.__table__()
+        return self.table.has_key(src, dst)    
 
     def getFlow(self, src, dst):
         if self.isFlowExist(src, dst):

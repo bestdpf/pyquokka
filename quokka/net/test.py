@@ -40,13 +40,12 @@ class TestTopo(TestCase):
         mat = [[1,2],[3,4]]
         print mat[0][:]
 
+    def chgLst(self, lst):
+        lst[0] = 0
+    
     def testLst(self):
         lst = [1,2,3]
-        lst2 = lst
-        lst2[1] = 4 
-        a = 1
-        lst = [a]
-        lst.append(a)
+        self.chgLst(lst)
         print lst
 
 if __name__ == '__main__':

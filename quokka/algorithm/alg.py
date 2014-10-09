@@ -1,3 +1,8 @@
+from quokka.util.funcs import *
+from quokka.util.defines import *
+from quokka.util.exception import *
+from quokka.util.ds import *
+
 class BaseAlg(object):
     def __init__(self):
         pass
@@ -100,10 +105,80 @@ class KLevel(BaseAlg):
         return ret[0:cnt]
 
 class MDP(BaseAlg):
-   def __init__(self):
+
+    def __init__(self):
+        pass
+    
+    def setPara(self, mbCnt, candi):
+        self.mbCnt = mbCnt
+        self.pool = self.topo.pool
+        #TO DO convert pools into mbs
+        self.candi = candi
+
+    def run(self):
         pass
 
+    def prepair(self):
+        #self.cnt = make2dList(mbCnt, len(self.pool), 0)
+        self.cnt = TwoDMap()
+
+    def singleMDP(self, flow, mask = set([])):
+        #self.singleTable = make2dList(mbCnt, Defines.mb_max_num, [-1, Defines.INF])
+        self.singleTable = TWoDMap()
+        proc = flow.proc
+        if len(proc) <= 0:
+            return [flow.src, flow.dst], self.topo.getDis(flow.src, flow.dst)
+        for idx,mb in enumerate(proc):
+            if idx == 0:
+                for idx2,candi in enumerate(self.candi[mb]):
+                    if candi in mask:
+                        continue
+                    self.singleTable[mb][candi] = [flow.src, self.topo.getDis(flow.src, candi)]
+            else:
+                for idx2,candi in enumerate(self.candi[mb]):
+                    if candi in mask:
+                        continue
+                    premb = proc[idx-1]
+                    for idx3, pre in enumerate(self.candi[premb]):
+                        if pre in mask:
+                        continue
+                        if self.singleTable[mb][candi][1] > self.singleTable[premb][pre][1] + self.topo.getDis(candi, pre):
+                            self.singleTable[mb][candi] = [pre , self.singleTable[premb][pre][1] + self.topo.getDis(candi, pre)]
+        lastmb = proc[-1]
+        finalDis = Defines.INF
+        finalmbidx = -1
+        finalmb = 0
+        for idx, candi in enumerate(self.candi[lastmb]):
+            if candi in mask:
+                continue
+            if finalDis > self.singleTable[lastmb][candi] + self.topo.getDis(candi, flow.dst):
+                finalDis = self.singleTable[lastmb][candi] + self.topo.getDis(candi , flow.dst)
+                #finalmbidx = idx
+                finalmb = candi
+        path = []
+        #stidx = finalmbidx
+        st = finalmb
+        path.append(flow.dst)
+        for i in range(len(proc)):
+            mbidx = len(proc) - i - 1
+            mb = proc[mbidx]
+            path.append(st)
+            st = self.singleTable[mb][st][0]
+        return path.reverse(), finalDis
+
+    def incCnt(self, path, proc):
+        if len(path) == len(proc) + 2:
+            raise AlgException('path\' length is wrong')
+        purePath = [1:-1]
+        for idx, mb in enumerate(proc):
+            if not self.cnt.has_key(mb,purePath[idx]):
+                self.cnt[mb][purePath[idx]] = 0
+            self.cnt[mb][purePath[idx]] += 1
+
+
+
 class QuokkaAlg(BaseAlg):
+
     def __init__(self):
         self.klevel = KLevel()
         self.mdp = MDP()

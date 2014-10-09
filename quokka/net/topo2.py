@@ -3,12 +3,14 @@
 from quokka.net.node import *
 from quokka.util.exception import NetException
 from collections import defaultdict as multimap
+from quokka.util.ds import *
+
 
 class Topology(object):
 
     def __init__(self):
         self.nd = {}
-        self.table = self.__table__()
+        self.table = TwoDMap()
         self.ndID = 0
         self.host = []
         self.pool = []
@@ -16,16 +18,18 @@ class Topology(object):
         self.MB = []
         self.INF = 1000000000
         self.minDis = False
-        self.switchDis = self.__table__()
+        self.switchDis = TwoDMap()
 
+    """
     def __table__(self):
         return multimap(self.__table__)
+    """
 
     def getSwitchDis(self, nd1, nd2):
         if not self.minDis:
             self.calcShortestPath()
             self.minDis = true
-        if self.dis[nd1][nd2] != self.__table__():
+        if self.dis.has_key(nd1 , nd2):
             return self.switchDis[nd1][nd2]
         else:
             return self.INF
@@ -52,7 +56,7 @@ class Topology(object):
             
 
     def calcShortestPath(self):
-        self.switchDis = self.__table__()
+        self.switchDis = TwoDMap() 
         #Floyd-Warshall Algorithm
         for switchID in self.switch:
             self.switchDis[switchID][switchID] = 0
@@ -88,7 +92,7 @@ class Topology(object):
             self.nd[nd2].setPool(nd1, delay)
 
     def isEdgeExist(self, nd1, nd2):
-        return self.table[nd1][nd2] != self.__table__()        
+        return self.table.has_key(nd1, nd2)        
 
     def getEdge(self,nd1, nd2):
         if self.isEdgeExist(nd1, nd2):
