@@ -40,13 +40,11 @@ class TestTopo(TestCase):
         mat = [[1,2],[3,4]]
         print mat[0][:]
 
-    def chgLst(self, lst):
-        lst[0] = 0
-    
     def testLst(self):
         lst = [1,2,3]
-        self.chgLst(lst)
-        print lst
+        lst2 = [3,2,1]
+        sorted(lst2, key = lambda i: lst[i-1])
+        print lst2
 
 if __name__ == '__main__':
     unittest.main()

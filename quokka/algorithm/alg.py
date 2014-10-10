@@ -21,7 +21,7 @@ class KLevel(BaseAlg):
     def __init__(self):
         pass
 
-    def setPara(self, mbCnt, numLst, level):
+    def setPara(self, numLst):
         """
         mbCnt is the number of mb types
         numLst is the list for number of mb for each type
@@ -31,9 +31,9 @@ class KLevel(BaseAlg):
         TO DO
         """
         self.pool = self.topo.pool        
-        self.mbCnt = mbCnt
+        self.mbCnt = Defines.mb_type 
         self.numLst = numLst
-        self.level = level
+        self.level = Defines.max_chain_len
         self.selectNum = numLst
 
     def run(self):
@@ -109,14 +109,59 @@ class MDP(BaseAlg):
     def __init__(self):
         pass
     
-    def setPara(self, mbCnt, candi):
-        self.mbCnt = mbCnt
+    def setPara(self, candi):
+        self.mbCnt = Defines.mb_type 
         self.pool = self.topo.pool
         #TO DO convert pools into mbs
         self.candi = candi
 
     def run(self):
-        pass
+        self.prepair()
+        lst = []
+        for i,j in self.flowMap.iteritems():
+            for k, flow in j.iteritems():
+                path,dis = self.singleMDP(flow, set([]))
+                lst.append([flow, path, dis])
+        sorted(lst, key = lambda ele: ele[2], reverse = true)
+        retLst = []
+        for flow,path,dis in lst.iteritems():
+            mask = self.checkCnt()
+            retPath, retDis = self.singleMDP(flow, mask)
+            #no path in this mask
+            if retDis > Defines.INF:
+                mask = set([])
+                retPath, retDis = self.singleMDP(flow, mask)
+            self.incCnt(retPath, flow.proc)
+            retLst.append([flow, retPath, retDis])
+        return retLst
+
+    def checkCnt(self):
+        ret = set([]);
+        for i,j in self.cnt.iteritems():
+            for k,cnt in j.iteritems():
+                if cnt > Defines.general_max:
+                    ret.insert(k)
+        return ret
+
+    def checkOverflow(self):
+        mbLst = []
+        for i,j in self.cnt.iteritems():
+            overflow = False
+            for k,cnt in j.iteritems():
+                if cnt > Defines.general_max:
+                    overflow = True
+            mbLst.append(i)
+
+    def checkOverDelay(self, retLst):
+        totalCnt = len(retLst)*1.0
+        overCnt = 0.0
+        for flow, retPath, retDis in retLst:
+            dis = retDis
+            for i,mbID in enumerate(retPath[1:-1]):
+                dis += self.topo.nd[mbID].delay(self.cnt[flow.proc[i]])
+            if retDis > Defines.max_delay:
+                overCnt += 1
+        return overCnt/totoalCnt
 
     def prepair(self):
         #self.cnt = make2dList(mbCnt, len(self.pool), 0)
@@ -182,6 +227,7 @@ class QuokkaAlg(BaseAlg):
     def __init__(self):
         self.klevel = KLevel()
         self.mdp = MDP()
+        self.minReq = [0]*Defines.mb_type
 
     def setTopo(self, topo):
         self.topo = topo
@@ -193,5 +239,28 @@ class QuokkaAlg(BaseAlg):
         self.klevel.setFlowMap(flowMap)
         self.mdp.setFlowMap(flowMap)
 
+    def calcMinReq(self):
+        for i,j in self.flowMap.table.iteritems():
+            for k,flow in j.iteritems():
+                for mb in flow.proc:
+                    self.minReq[mb] += 1
+        for mb in range(Defines.mb_type):
+            self.minReq[mb] /= Defines.general_max
+            self.minReq[mb] += 1
+            if self.minReq[mb] > Defines.mb_max_num:
+                raise AlgException('need more mb instances')
+
     def run(self):
-       pass 
+        # calc min request mb number list
+        self.calcMinReq()
+        while True:
+            self.klevel.setPara(self.minReq)
+            pla = self.klevel.run()
+            self.mdp.setPara(pla)
+            retLst = self.mdp.run()
+            if self.mdp.checkOverDelay() > Defines.max_delay_ratio:
+                addLst = self.mdp.checkCnt()
+                for addItem in addLst:
+                    self.minReq[addItem] += Defines.mb_add_step
+            else:
+                return pla, retLst

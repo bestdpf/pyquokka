@@ -4,7 +4,7 @@ from quokka.net.node import *
 from quokka.util.exception import NetException
 from collections import defaultdict as multimap
 from quokka.util.ds import *
-
+from random import *
 
 class Topology(object):
 
@@ -100,8 +100,11 @@ class Topology(object):
         else:
             return self.INF 
 
+    def isNodeExist(self, nd):
+        return self.nd.has_key(nd)
+
     def getNode(self, nd):
-        if not self.nd.has_key(nd):
+        if not self.isNodeExist(nd):
             return None
         else:
             return nd
@@ -112,6 +115,14 @@ class Topology(object):
             del self.table[nd2][nd1]
         else:
             raise NetException('no such edge')
+
+    def delNode(self, nd):
+        if not self.isNodeExist(nd):
+            raise NetException('no such node')
+        for src, table in self.table[nd].iteritems():
+            for dst, dis in table.iteritems():
+                del self.table[src][dst]
+                del self.table[dst][src]
 
     def addSwitch(self, switchID, dstSwitchID, delay):
         self.addIsolateSwitch(switchID)
@@ -161,3 +172,64 @@ class Topology(object):
         else:
             raise NetException('invided node type')
     """
+
+class FatTree(Topology):
+
+    def __init__(self, k, delay):
+        self.portNum = k
+        self.coreCnt = k*k/4
+        self.aggCnt = k*k/2
+        self.edgeCnt = k*k/2
+        self.hostCnt = k*k*k/4
+        st = 0
+        ed = self.coreCnt 
+        self.core = [st:ed]
+        st += self.coreCnt
+        ed += self.aggCnt
+        self.agg = [st:ed]
+        st += self.aggCnt
+        ed += self.edgeCnt
+        self.edge = [st:ed]
+        st += self.edgeCnt
+        ed += self.hostCnt
+        self.hostID = [st:ed]
+        self.delay = delay
+    
+    def buildTree(self):
+        self.addCore()
+        self.addAgg()
+        self.addEdge()
+
+    def addCoreSwitch(self):
+        for i in self.core:
+            self.addSwitch(i)
+
+    def addAggSwitch(self):
+        for i in self.agg:
+            self.addIsolateSwitch(i)
+        for i in range(self.portNum):
+            if i < self.portNum:
+                self.addEdge(self.core[i],self.agg[2*i], self.delay)
+            else:
+                self.addEdge(self.core[i],self.agg[2*i+1], self.delay)
+
+    def addEdgeSwitch(self):
+        for i in self.edge:
+            self.addIsolateSwitch(i)
+        for pod in range(self.portNum):
+            for i in range(self.portNum/2):
+                src = pod*self.portNum/2 + i
+                for j in range(self.portNum/2):
+                    dst = pod*self.portNum/2 + j
+                    self.addEdge(src, dst, self.delay)
+
+    def addEndNode(self, hostRatio):
+        for i in self.hostID:
+            if self.isNodeExist(i):
+                self.delNode(i)
+            seed()
+            rand = randint(0, 100)
+            if rand < hostRatio:
+                self.addHost(i, self.edge[i/(k/2)])
+            else:
+                self.addPool(i, self.edge[i/(k/2)])

@@ -1,7 +1,8 @@
 """
 network element node
 """
-
+from quokka.util.defines import *
+from random import *
 
 class Edge(object):
 
@@ -27,7 +28,7 @@ class Node(object):
         self.online = True
         self.ID = ID
         self.edge = []
-
+    """
     def addEdge(self, edgeID):
         self.edge.append(edgeID)
 
@@ -36,6 +37,7 @@ class Node(object):
 
     def delEdge(self, edgeID):
         self.edge.remove(edgeID)
+    """
 
 class Host(Node):
 
@@ -70,7 +72,7 @@ class MB(Node):
         self.name = name
 
     def delay(self, flowNum):
-        return 0
+        return Defines.general_base_delay
 
     def setPool(self, poolID, dis):
         self.poolID = poolID
@@ -83,5 +85,52 @@ class Proxy(MB):
         setName('proxy')
 
     def delay(self, flowNum):
-        return 0  
+        seed()
+        seq = randint(0,flowNum)
+        time = Defines.proxy_base_delay*(seq/Defines.general_speed + 1)    
+        return time
+
+class GateWay(MB):
+    def __init__(self, MBID):
+        MB.__init__(self, MBID)
+        setName('gateway')
+
+    def delay(self, flowNum):
+        seed()
+        seq = randint(0, flowNum)
+        time = Defines.gateway_base_delay*(seq/Defines.gateway_speed + 1)
+        return time
+
+class IDS(MB):
+    def __init__(self, MBID):
+        MB.__init__(self, MBID)
+        setName('ids')
+
+    def delay(self, flowNum):
+        seed()  
+        seq = randint(0, flowNum)
+        time = Defines.ids_base_delay*(seq/Defines.ids_speed + 1)
+        return time
+
+class FireWall(MB):
+    def __init__(self, MBID):
+        MB.__init__(self, MBID)
+        setName('firewall')
+
+    def delay(self, flowNum):
+        seed()
+        seq = randint(0, flowNum)
+        time = Defines.firewall_base_delay*(seq/Defines.firewall_speed + 1)
+
+class NAT(MB):
+    def __init__(self, MBID):
+        MB.__init__(self, MBID)
+        setName('nat')
+
+    def delay(self, flowNum):
+        seed()
+        seq = randint(0, flowNum)
+        time = Defines.nat_base_delay*(seq/Defines.nat_speed + 1)
+        return time
+
 
