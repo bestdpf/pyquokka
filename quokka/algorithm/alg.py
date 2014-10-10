@@ -78,19 +78,19 @@ class KLevel(BaseAlg):
                     maxIdx = i
             self.candi[j] = self.pool[i]
         """
-        for j in range(mbCnt):
+        for j in range(self.mbCnt):
             self.candi[j] = self.getNPool(j, self.selectNum[j])
 
     def finalSelect(self):
         ret = self.make2dList(self.mbCnt, 1)
-        for j in range(mbCnt):
-            ret[j] = self.getNPool(j, self.num[j])
+        for j in range(self.mbCnt):
+            ret[j] = self.getNPool(j, self.numLst[j])
         return ret
 
     def getMBCol(self, mb):
         mbLst = []
         for i in range(len(self.pool)):
-            mbList.append(self.score[i][mb])
+            mbLst.append(self.score[i][mb])
         return mbLst
 
     def getNPool(self, mb, n):
@@ -122,9 +122,9 @@ class MDP(BaseAlg):
             for k, flow in j.iteritems():
                 path,dis = self.singleMDP(flow, set([]))
                 lst.append([flow, path, dis])
-        sorted(lst, key = lambda ele: ele[2], reverse = true)
+        sorted(lst, key = lambda ele: ele[2], reverse = True)
         retLst = []
-        for flow,path,dis in lst.iteritems():
+        for flow,path,dis in lst:
             mask = self.checkCnt()
             retPath, retDis = self.singleMDP(flow, mask)
             #no path in this mask
@@ -140,7 +140,7 @@ class MDP(BaseAlg):
         for i,j in self.cnt.iteritems():
             for k,cnt in j.iteritems():
                 if cnt > Defines.general_max:
-                    ret.insert(k)
+                    ret.add(k)
         return ret
 
     def checkOverflow(self):
@@ -161,7 +161,7 @@ class MDP(BaseAlg):
                 dis += self.topo.nd[mbID].delay(self.cnt[flow.proc[i]])
             if retDis > Defines.max_delay:
                 overCnt += 1
-        return overCnt/totoalCnt
+        return overCnt/totalCnt
 
     def prepair(self):
         #self.cnt = make2dList(mbCnt, len(self.pool), 0)
@@ -169,7 +169,7 @@ class MDP(BaseAlg):
 
     def singleMDP(self, flow, mask = set([])):
         #self.singleTable = make2dList(mbCnt, Defines.mb_max_num, [-1, Defines.INF])
-        self.singleTable = TWoDMap()
+        self.singleTable = TwoDMap()
         proc = flow.proc
         if len(proc) <= 0:
             return [flow.src, flow.dst], self.topo.getDis(flow.src, flow.dst)
@@ -186,7 +186,7 @@ class MDP(BaseAlg):
                     premb = proc[idx-1]
                     for idx3, pre in enumerate(self.candi[premb]):
                         if pre in mask:
-                        continue
+                            continue
                         if self.singleTable[mb][candi][1] > self.singleTable[premb][pre][1] + self.topo.getDis(candi, pre):
                             self.singleTable[mb][candi] = [pre , self.singleTable[premb][pre][1] + self.topo.getDis(candi, pre)]
         lastmb = proc[-1]
@@ -214,7 +214,7 @@ class MDP(BaseAlg):
     def incCnt(self, path, proc):
         if len(path) == len(proc) + 2:
             raise AlgException('path\' length is wrong')
-        purePath = [1:-1]
+        purePath = path[1:-1]
         for idx, mb in enumerate(proc):
             if not self.cnt.has_key(mb,purePath[idx]):
                 self.cnt[mb][purePath[idx]] = 0
@@ -258,7 +258,7 @@ class QuokkaAlg(BaseAlg):
             pla = self.klevel.run()
             self.mdp.setPara(pla)
             retLst = self.mdp.run()
-            if self.mdp.checkOverDelay() > Defines.max_delay_ratio:
+            if self.mdp.checkOverDelay(retLst) > Defines.max_delay_ratio:
                 addLst = self.mdp.checkCnt()
                 for addItem in addLst:
                     self.minReq[addItem] += Defines.mb_add_step

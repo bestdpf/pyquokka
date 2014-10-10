@@ -82,7 +82,7 @@ class Proxy(MB):
 
     def __init__(self, MBID):
         MB.__init__(self, MBID)
-        setName('proxy')
+        self.setName('proxy')
 
     def delay(self, flowNum):
         seed()
@@ -93,7 +93,7 @@ class Proxy(MB):
 class GateWay(MB):
     def __init__(self, MBID):
         MB.__init__(self, MBID)
-        setName('gateway')
+        self.setName('gateway')
 
     def delay(self, flowNum):
         seed()
@@ -104,7 +104,7 @@ class GateWay(MB):
 class IDS(MB):
     def __init__(self, MBID):
         MB.__init__(self, MBID)
-        setName('ids')
+        self.setName('ids')
 
     def delay(self, flowNum):
         seed()  
@@ -115,7 +115,7 @@ class IDS(MB):
 class FireWall(MB):
     def __init__(self, MBID):
         MB.__init__(self, MBID)
-        setName('firewall')
+        self.setName('firewall')
 
     def delay(self, flowNum):
         seed()
@@ -125,7 +125,7 @@ class FireWall(MB):
 class NAT(MB):
     def __init__(self, MBID):
         MB.__init__(self, MBID)
-        setName('nat')
+        self.setName('nat')
 
     def delay(self, flowNum):
         seed()

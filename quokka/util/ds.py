@@ -14,10 +14,7 @@ class TwoDMap(object):
     def has_key(self, idx1, idx2):
         return self.table[idx1] != self.__table__() and \
                 self.table[idx1][idx2] != self.__table__()
-
-    def __call__(self, value):
-        return self.table.__call__(value)
-
+    
     def __getattr__(self, attr):
         if hasattr(self.table, attr):
             def wrapper(*args, **kw):

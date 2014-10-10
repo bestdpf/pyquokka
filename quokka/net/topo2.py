@@ -28,8 +28,8 @@ class Topology(object):
     def getSwitchDis(self, nd1, nd2):
         if not self.minDis:
             self.calcShortestPath()
-            self.minDis = true
-        if self.dis.has_key(nd1 , nd2):
+            self.minDis = True
+        if self.switchDis.has_key(nd1 , nd2):
             return self.switchDis[nd1][nd2]
         else:
             return self.INF
@@ -183,26 +183,26 @@ class FatTree(Topology):
         self.hostCnt = k*k*k/4
         st = 0
         ed = self.coreCnt 
-        self.core = [st:ed]
+        self.core = range(st, ed) 
         st += self.coreCnt
         ed += self.aggCnt
-        self.agg = [st:ed]
+        self.agg = range(st, ed)
         st += self.aggCnt
         ed += self.edgeCnt
-        self.edge = [st:ed]
+        self.edge = range(st, ed)
         st += self.edgeCnt
         ed += self.hostCnt
-        self.hostID = [st:ed]
+        self.hostID = range(st, ed)
         self.delay = delay
     
     def buildTree(self):
-        self.addCore()
-        self.addAgg()
-        self.addEdge()
+        self.addCoreSwitch()
+        self.addAggSwitch()
+        self.addEdgeSwitch()
 
     def addCoreSwitch(self):
         for i in self.core:
-            self.addSwitch(i)
+            self.addIsolateSwitch(i)
 
     def addAggSwitch(self):
         for i in self.agg:
@@ -230,6 +230,6 @@ class FatTree(Topology):
             seed()
             rand = randint(0, 100)
             if rand < hostRatio:
-                self.addHost(i, self.edge[i/(k/2)])
+                self.addHost(i, self.edge[i/(self.portNum/2)],self.delay)
             else:
-                self.addPool(i, self.edge[i/(k/2)])
+                self.addPool(i, self.edge[i/(self.portNum/2)],self.delay)

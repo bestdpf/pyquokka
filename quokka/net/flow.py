@@ -41,7 +41,7 @@ class FlowMap(object):
         if self.isFlowExist(src, dst):
             return self.table[src][dst]
         else:
-            return [0, []]
+            return Flow(src, dst) 
 
     def delFlow(self, src, dst):
         if self.isFlowExist(src, dst): 
