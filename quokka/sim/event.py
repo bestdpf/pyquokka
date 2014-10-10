@@ -1,4 +1,5 @@
 from quokka.algorithm.alg import *
+from quokka.net.topo2 import *
 
 class Event(object):
 
@@ -6,8 +7,8 @@ class Event(object):
         pass
 
     def run(self):
-        self.flowMap = self.getFlowMap()
         self.topo = self.getTopo()
+        self.flowMap = self.getFlowMap()
         self.alg = QuokkaAlg()
         pla,mdp = self.alg.run()
         return pla,mdp
@@ -16,4 +17,5 @@ class Event(object):
         pass
 
     def getTopo(self):
-        pass
+        # FatTree, k = 16, delay = 5
+        return  FatTree(16, 5)

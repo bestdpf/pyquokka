@@ -45,7 +45,7 @@ class KLevel(BaseAlg):
 
     def  prepair(self):
         self.score = self.make2dList(len(self.pool), self.mbCnt)
-        self.candi = [0]*self.mbCnt
+        self.candi = [[]]*self.mbCnt
         
 
     def make2dList(self, row, col):
@@ -158,7 +158,7 @@ class MDP(BaseAlg):
         for flow, retPath, retDis in retLst:
             dis = retDis
             for i,mbID in enumerate(retPath[1:-1]):
-                dis += self.topo.nd[mbID].delay(self.cnt[flow.proc[i]])
+                dis += self.topo.nd[mbID].getMBDelay(self.cnt[flow.proc[i]])
             if retDis > Defines.max_delay:
                 overCnt += 1
         return overCnt/totalCnt

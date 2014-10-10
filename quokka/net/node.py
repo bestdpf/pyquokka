@@ -3,6 +3,7 @@ network element node
 """
 from quokka.util.defines import *
 from random import *
+from quokka.util.exception import *
 
 class Edge(object):
 
@@ -58,10 +59,34 @@ class Pool(Node):
 
     def __init__(self, poolID):
         Node.__init__(self, ndType='pool', ID=poolID)
+        self.mb = []
 
     def setSwitch(self, switchID, dis):
         self.switchID = switchID
         self.dis = dis
+
+    def getMBDelay(self, mb_type, flowNum):
+        if mb_type == 0:
+            mb = Proxy(0)
+        elif mb_type == 1:
+            mb = IDS(0)
+        elif mb_type == 2:
+            mb = FireWall(0)
+        elif mb_type == 3:
+            mb = NAT(0)
+        elif mb_type == 4:
+            mb = GateWay(0)
+        else:
+            raise NetException('error mb type number, should be in [0,5)')
+        return mb.delay(flowNum)
+
+    """
+    def clearMB(self):
+        self.mb = []
+
+    def installMB(self, MBID):
+        self.mb.append(MBID)
+    """
 
 class MB(Node):
 
@@ -74,7 +99,7 @@ class MB(Node):
     def delay(self, flowNum):
         return Defines.general_base_delay
 
-    def setPool(self, poolID, dis):
+    def setPool(self, poolID, dis = 0):
         self.poolID = poolID
         self.dis = dis
 

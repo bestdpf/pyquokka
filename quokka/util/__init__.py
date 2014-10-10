@@ -1,1 +1,1 @@
-__all__=["exception", "defines", "funcs", "ds" , "conf"]
+__all__=["exception", "defines", "funcs", "ds" , "conf", "debug"]
