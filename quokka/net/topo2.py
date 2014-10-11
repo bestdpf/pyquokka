@@ -184,6 +184,7 @@ class FatTree(Topology):
         st = 0
         ed = self.coreCnt 
         self.core = range(st, ed) 
+        self.out = self.core
         st += self.coreCnt
         ed += self.aggCnt
         self.agg = range(st, ed)
