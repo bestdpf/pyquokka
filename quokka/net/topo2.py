@@ -5,6 +5,7 @@ from quokka.util.exception import NetException
 from collections import defaultdict as multimap
 from quokka.util.ds import *
 from random import *
+from quokka.util.debug import Debug
 
 class Topology(object):
 
@@ -32,9 +33,12 @@ class Topology(object):
         if self.switchDis.has_key(nd1 , nd2):
             return self.switchDis[nd1][nd2]
         else:
+            Debug.debug('switch dis not found', nd1, nd2)
             return self.INF
 
     def getDis(self, nd1, nd2):
+        if nd1 == nd2:
+            return 0
         dis1,switchID1 = self.toSwitchDis(nd1)
         dis2,switchID2 = self.toSwitchDis(nd2)
         dis = dis1 + dis2 + self.getSwitchDis(switchID1, switchID2)
@@ -66,9 +70,11 @@ class Topology(object):
                     self.switchDis[src][dst] = delay
         for switchID in self.switch:
             for src in self.switch:
-                for dst in self.switch:
-                    if self.switchDis[src][dst] > self.switchDis[src][switchID] + self.switchDis[switchID][dst]:
-                        self.switchDis[src][dst] = self.switchDis[src][switchID] + self.switchDis[switchID][dst]
+                if self.switchDis.has_key(src, switchID):
+                    for dst in self.switch:
+                        if self.switchDis.has_key(dst, switchID):
+                            if self.switchDis[src][dst] > self.switchDis[src][switchID] + self.switchDis[switchID][dst]:
+                                self.switchDis[src][dst] = self.switchDis[src][switchID] + self.switchDis[switchID][dst]
 
     def getNodeID(self):
         self.ndID = self.ndID + 1
@@ -176,6 +182,7 @@ class Topology(object):
 class FatTree(Topology):
 
     def __init__(self, k, delay):
+        Topology.__init__(self)
         self.portNum = k
         self.coreCnt = k*k/4
         self.aggCnt = k*k/2
@@ -195,6 +202,7 @@ class FatTree(Topology):
         ed += self.hostCnt
         self.hostID = range(st, ed)
         self.delay = delay
+        self.buildTree()
     
     def buildTree(self):
         self.addCoreSwitch()
@@ -208,29 +216,28 @@ class FatTree(Topology):
     def addAggSwitch(self):
         for i in self.agg:
             self.addIsolateSwitch(i)
-        for i in range(self.portNum):
-            if i < self.portNum:
-                self.addEdge(self.core[i],self.agg[2*i], self.delay)
-            else:
-                self.addEdge(self.core[i],self.agg[2*i+1], self.delay)
+        for pod in range(self.portNum):
+            for aggIdx in range(self.portNum/2):
+                for coreIdx in range(self.portNum/2):
+                    self.addEdge(self.agg[pod*self.portNum/2 + aggIdx], self.core[aggIdx*self.portNum/2 + coreIdx], self.delay)
 
     def addEdgeSwitch(self):
         for i in self.edge:
             self.addIsolateSwitch(i)
         for pod in range(self.portNum):
             for i in range(self.portNum/2):
-                src = pod*self.portNum/2 + i
+                edgeId = pod*self.portNum/2 + i
                 for j in range(self.portNum/2):
-                    dst = pod*self.portNum/2 + j
-                    self.addEdge(src, dst, self.delay)
+                    aggId = pod*self.portNum/2 + j
+                    self.addEdge(self.edge[edgeId], self.agg[aggId], self.delay)
 
     def addEndNode(self, hostRatio):
-        for i in self.hostID:
-            if self.isNodeExist(i):
-                self.delNode(i)
+        for i,hostID in enumerate(self.hostID):
+            if self.isNodeExist(hostID):
+                self.delNode(hostID)
             seed()
-            rand = randint(0, 100)
+            rand = random()
             if rand < hostRatio:
-                self.addHost(i, self.edge[i/(self.portNum/2)],self.delay)
+                self.addHost(hostID, self.edge[i/(self.portNum/2)],self.delay)
             else:
-                self.addPool(i, self.edge[i/(self.portNum/2)],self.delay)
+                self.addPool(hostID, self.edge[i/(self.portNum/2)],self.delay)

@@ -2,6 +2,7 @@ from quokka.util.funcs import *
 from quokka.util.defines import *
 from quokka.util.exception import *
 from quokka.util.ds import *
+from quokka.util.debug import Debug
 
 class BaseAlg(object):
     def __init__(self):
@@ -37,6 +38,7 @@ class KLevel(BaseAlg):
         self.selectNum = numLst
 
     def run(self):
+        Debug.debug('k level run')
         self.prepair()
         for i in range(self.level):
             self.vote(i)
@@ -65,7 +67,8 @@ class KLevel(BaseAlg):
                         src = self.candi[flow.proc[k-1]]
                     for idx,poolID in enumerate(self.pool):
                         for srci in src:
-                            self.score[idx][mb] += flow.size*1000.0/self.topo.getDis(srci, poolID)
+                            if srci != poolID:
+                                self.score[idx][mb] += flow.size*1000.0/self.topo.getDis(srci, poolID)
 
     def select(self):
         """
@@ -85,6 +88,7 @@ class KLevel(BaseAlg):
         ret = self.make2dList(self.mbCnt, 1)
         for j in range(self.mbCnt):
             ret[j] = self.getNPool(j, self.numLst[j])
+        Debug.debug('score', self.score)
         return ret
 
     def getMBCol(self, mb):
@@ -95,13 +99,14 @@ class KLevel(BaseAlg):
 
     def getNPool(self, mb, n):
         lst = self.getMBCol(mb)
-        ret = []
+        obj = []
         for i in range(len(self.pool)):
-            ret.append(i)
-        sorted(ret, key=lambda i: lst[i], reverse=True)
-        for idx,val in enumerate(ret):
-            ret[idx] = self.pool[val]
-        cnt = max(n, len(self.pool))
+            obj.append([i, lst[i]])
+        obj.sort(key=lambda i: i[1], reverse=True)
+        ret = []
+        for i,score in obj:
+            ret.append(self.pool[i])
+        cnt = min(n, len(self.pool))
         return ret[0:cnt]
 
 class MDP(BaseAlg):
@@ -116,13 +121,14 @@ class MDP(BaseAlg):
         self.candi = candi
 
     def run(self):
+        Debug.debug('mdp run')
         self.prepair()
         lst = []
-        for i,j in self.flowMap.iteritems():
+        for i,j in self.flowMap.table.iteritems():
             for k, flow in j.iteritems():
                 path,dis = self.singleMDP(flow, set([]))
                 lst.append([flow, path, dis])
-        sorted(lst, key = lambda ele: ele[2], reverse = True)
+        lst.sort(key = lambda ele: ele[2], reverse = True)
         retLst = []
         for flow,path,dis in lst:
             mask = self.checkCnt()
@@ -158,9 +164,11 @@ class MDP(BaseAlg):
         for flow, retPath, retDis in retLst:
             dis = retDis
             for i,mbID in enumerate(retPath[1:-1]):
-                dis += self.topo.nd[mbID].getMBDelay(self.cnt[flow.proc[i]])
+                Debug.debug(self.topo.nd[mbID].getMBDelay(flow.proc[i], self.cnt[flow.proc[i]][mbID]))
+                dis += self.topo.nd[mbID].getMBDelay(flow.proc[i], self.cnt[flow.proc[i]][mbID])
             if retDis > Defines.max_delay:
                 overCnt += 1
+        Debug.debug('over delay ratio:',overCnt/totalCnt)
         return overCnt/totalCnt
 
     def prepair(self):
@@ -184,6 +192,7 @@ class MDP(BaseAlg):
                     if candi in mask:
                         continue
                     premb = proc[idx-1]
+                    self.singleTable[mb][candi] = [-1 , Defines.INF]
                     for idx3, pre in enumerate(self.candi[premb]):
                         if pre in mask:
                             continue
@@ -196,23 +205,25 @@ class MDP(BaseAlg):
         for idx, candi in enumerate(self.candi[lastmb]):
             if candi in mask:
                 continue
-            if finalDis > self.singleTable[lastmb][candi] + self.topo.getDis(candi, flow.dst):
-                finalDis = self.singleTable[lastmb][candi] + self.topo.getDis(candi , flow.dst)
+            if finalDis > self.singleTable[lastmb][candi][1] + self.topo.getDis(candi, flow.dst):
+                finalDis = self.singleTable[lastmb][candi][1] + self.topo.getDis(candi , flow.dst)
                 #finalmbidx = idx
                 finalmb = candi
         path = []
         #stidx = finalmbidx
         st = finalmb
         path.append(flow.dst)
+        path.append(st)
         for i in range(len(proc)):
             mbidx = len(proc) - i - 1
             mb = proc[mbidx]
-            path.append(st)
             st = self.singleTable[mb][st][0]
-        return path.reverse(), finalDis
+            path.append(st)
+        path.reverse()
+        return path, finalDis
 
     def incCnt(self, path, proc):
-        if len(path) == len(proc) + 2:
+        if len(path) != len(proc) + 2:
             raise AlgException('path\' length is wrong')
         purePath = path[1:-1]
         for idx, mb in enumerate(proc):
@@ -254,6 +265,7 @@ class QuokkaAlg(BaseAlg):
         # calc min request mb number list
         self.calcMinReq()
         while True:
+            Debug.debug('min req', self.minReq)
             self.klevel.setPara(self.minReq)
             pla = self.klevel.run()
             self.mdp.setPara(pla)

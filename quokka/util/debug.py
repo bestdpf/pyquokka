@@ -1,6 +1,6 @@
 class Debug(object):
-    enable = True
+    enable = True 
     @classmethod
-    def debug(cls, val):
+    def debug(cls, *args):
         if cls.enable:
-            print val
+            print args

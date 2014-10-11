@@ -4,7 +4,7 @@ from quokka.util.ds import *
 
 class Flow(object):
 
-    def __init__(self, src, dst ,size = 0, proc = []):
+    def __init__(self, src, dst ,size , proc ):
         self.src = src
         self.dst = dst
         self.size = size
@@ -30,7 +30,7 @@ class FlowMap(object):
         return multimap(self.__table__)
     """
 
-    def addFlow(self, src, dst, size, proc = [] ):
+    def addFlow(self, src, dst, size, proc  ):
         self.table[src][dst] = Flow(src, dst, size, proc)
 
     def isFlowExist(self, src, dst):

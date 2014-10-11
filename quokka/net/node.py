@@ -4,6 +4,7 @@ network element node
 from quokka.util.defines import *
 from random import *
 from quokka.util.exception import *
+from quokka.util.debug import Debug
 
 class Edge(object):
 
@@ -146,6 +147,7 @@ class FireWall(MB):
         seed()
         seq = randint(0, flowNum)
         time = Defines.firewall_base_delay*(seq/Defines.firewall_speed + 1)
+        return time
 
 class NAT(MB):
     def __init__(self, MBID):

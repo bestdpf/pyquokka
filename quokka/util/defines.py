@@ -31,6 +31,7 @@ class Defines(object):
 
     INF = 1000000000
 
+    mb_select_num = 10
     mb_max_num = 10
     mb_type = 5
     mb_add_step = 1
@@ -40,4 +41,11 @@ class Defines(object):
     mb_lst = ['firewall', 'nat', 'ids', 'gateway', 'proxy']
     mb_id = {'firewall':0, 'nat':1, 'ids':2, 'gateway':3, 'proxy':4}
 
+    outFlowRatio = 0.56
+    shortSmallRatio = 57.2
+    shortLargeRatio = 59.8
+    longSmallRatio = 91.6
+    longLargeRatio = 8.4
+    hostRatio = 0.8    
 
+    flow_num = 2000
