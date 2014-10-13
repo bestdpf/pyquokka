@@ -31,7 +31,7 @@ class Defines(object):
 
     INF = 1000000000
 
-    fattree_delay = 5
+    fattree_delay = 2 
 
     mb_select_num = 10
     mb_max_num = 100 

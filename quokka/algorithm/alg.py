@@ -192,15 +192,18 @@ class MDP(BaseAlg):
 
     def checkOverflow(self):
         mbLst = []
+        f = open('qlbminflownum' + str(self.seq), 'w')
         for i,j in self.cnt.iteritems():
             overflow = False
             for k,cnt in j.iteritems():
                 Debug.debug('type %d pool %d cnt %d' %(i, k, cnt))
+                f.write('%d %d %d\n' %( i, k, cnt))
                 if cnt > Defines.general_busy*2:
                     overflow = True
             if overflow:
                 Debug.debug('mb type %d overflow' % i)
                 mbLst.append(i)
+        f.close()
         return mbLst
 
     def getCandi(self):
@@ -358,6 +361,7 @@ class QuokkaAlg(BaseAlg):
             pla = self.klevel.run()
             self.mdp.setPara(pla)
             retLst = self.mdp.run()
+            self.mdp.checkOverflow()
             if self.mdp.checkOverDelay(retLst) > Defines.max_delay_ratio:
                 addLst = self.mdp.checkOverflowByDelay(retLst)
                 for addItem in addLst:

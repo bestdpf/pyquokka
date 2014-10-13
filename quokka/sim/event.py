@@ -3,7 +3,8 @@ from quokka.net.topo2 import *
 from quokka.net.flow import *
 from random import *
 from quokka.util.debug import *
-
+from quokka.algorithm.algFF import FFAlg 
+from quokka.algorithm.algFLB import FLBAlg
 class Event(object):
 
     def __init__(self):
@@ -19,6 +20,32 @@ class Event(object):
         self.alg.setTopo(self.topo)
         pla,mdp = self.alg.run()
         return pla,mdp
+  
+    def runFF(self):
+        self.topo = self.getTopo()
+        self.topo.addEndNode(Defines.hostRatio)
+        Debug.debug('pool', self.topo.pool)
+        self.flowMap = self.getFlowMap()
+        self.alg = FFAlg()
+        self.alg.setFlowMap(self.flowMap)
+        self.alg.setTopo(self.topo)
+        numLst = [4, 4, 4, 4, 4]
+        self.alg.setPara(numLst)
+        mdp = self.alg.run()
+        return mdp
+ 
+    def runFLB(self):
+        self.topo = self.getTopo()
+        self.topo.addEndNode(Defines.hostRatio)
+        Debug.debug('pool', self.topo.pool)
+        self.flowMap = self.getFlowMap()
+        self.alg = FLBAlg()
+        self.alg.setFlowMap(self.flowMap)
+        self.alg.setTopo(self.topo)
+        numLst = [4, 4, 4, 4, 4]
+        self.alg.setPara(numLst)
+        mdp = self.alg.run()
+        return mdp
        
     def getFlowMap(self):
         flowMap = FlowMap()
@@ -60,6 +87,9 @@ class Event(object):
         else:
             size = 10
         return size
+
+    def readTopo(self):
+        pass
 
     def getTopo(self):
         # FatTree, k = 16, delay = 5
