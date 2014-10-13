@@ -48,6 +48,19 @@ class Event(object):
         idx = randint(0, len(self.topo.core)- 1)
         return self.topo.core[idx]
 
+    def getRandFlowSize(self):
+        seed()
+        p = random()
+        if p < shortSmallRatio:
+            size = 50
+        elif p <shortLargeRatio:
+            size = 1000
+        elif p < longSmallRatio:
+            size = 1
+        else:
+            size = 10
+        return size
+
     def getTopo(self):
         # FatTree, k = 16, delay = 5
-        return  FatTree(16, 5)
+        return  FatTree(16, Defines.fattree_delay)

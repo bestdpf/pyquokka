@@ -3,6 +3,8 @@ from quokka.util.defines import *
 from quokka.util.exception import *
 from quokka.util.ds import *
 from quokka.util.debug import Debug
+import math
+import random
 
 class BaseAlg(object):
     def __init__(self):
@@ -68,7 +70,8 @@ class KLevel(BaseAlg):
                     for idx,poolID in enumerate(self.pool):
                         for srci in src:
                             if srci != poolID:
-                                self.score[idx][mb] += flow.size*1000.0/self.topo.getDis(srci, poolID)
+                                dis = self.topo.getDis(srci, poolID)
+                                self.score[idx][mb] += flow.size*1000.0/math.log(dis)
 
     def select(self):
         """
@@ -82,13 +85,19 @@ class KLevel(BaseAlg):
             self.candi[j] = self.pool[i]
         """
         for j in range(self.mbCnt):
-            self.candi[j] = self.getNPool(j, self.selectNum[j])
+            mask = set([])
+            self.candi[j] = self.getNPool(j, self.selectNum[j], mask)
+            for item in self.candi[j]:
+                mask.add(item)
 
     def finalSelect(self):
         ret = self.make2dList(self.mbCnt, 1)
+        mask = set([])
         for j in range(self.mbCnt):
-            ret[j] = self.getNPool(j, self.numLst[j])
-        Debug.debug('score', self.score)
+            ret[j] = self.getNPool(j, self.numLst[j], mask)
+            for item in ret[j]:
+                mask.add(item)
+        Debug.debug('final selected ret', ret)
         return ret
 
     def getMBCol(self, mb):
@@ -97,7 +106,7 @@ class KLevel(BaseAlg):
             mbLst.append(self.score[i][mb])
         return mbLst
 
-    def getNPool(self, mb, n):
+    def getNPool(self, mb, n ,mask):
         lst = self.getMBCol(mb)
         obj = []
         for i in range(len(self.pool)):
@@ -105,15 +114,18 @@ class KLevel(BaseAlg):
         obj.sort(key=lambda i: i[1], reverse=True)
         ret = []
         for i,score in obj:
-            ret.append(self.pool[i])
-        cnt = min(n, len(self.pool))
+            if self.pool[i] not in mask:
+                ret.append(self.pool[i])
+        if n > len(ret):
+            raise AlgException('pool num is not enough')
+        cnt = min(n, len(ret))
         return ret[0:cnt]
 
 class MDP(BaseAlg):
 
     def __init__(self):
         pass
-    
+        self.seq = 0 
     def setPara(self, candi):
         self.mbCnt = Defines.mb_type 
         self.pool = self.topo.pool
@@ -131,44 +143,113 @@ class MDP(BaseAlg):
         lst.sort(key = lambda ele: ele[2], reverse = True)
         retLst = []
         for flow,path,dis in lst:
-            mask = self.checkCnt()
+            mask,tp = self.checkMask()
             retPath, retDis = self.singleMDP(flow, mask)
             #no path in this mask
-            if retDis > Defines.INF:
-                mask = set([])
+            while retDis >= Defines.INF:
+                Debug.debug('!!!!!!!!!!!!!!!!!!!cannot found path in mask!!!!!!!!!!!')
+                tPath, tDis = self.singleMDP(flow, set([]))
+                minIdx = -1
+                minVal = Defines.INF
+                for mb in tPath[1:-1]:
+                    if mb in mask:
+                        if minVal > self.cnt[tp[mb]][mb]:
+                            minVal = self.cnt[tp[mb]][mb]
+                            minIdx = mb
+                mask.remove(minIdx)
                 retPath, retDis = self.singleMDP(flow, mask)
             self.incCnt(retPath, flow.proc)
             retLst.append([flow, retPath, retDis])
         return retLst
-
-    def checkCnt(self):
-        ret = set([]);
+    """
+    def checkMaskType(self):
+        ret = set([])
         for i,j in self.cnt.iteritems():
             for k,cnt in j.iteritems():
                 if cnt > Defines.general_max:
-                    ret.add(k)
+                    ret.add(i)
+        Debug.debug('check mb', ret)
         return ret
+    """
+
+    def checkMask(self):
+        ret = set([])
+        tp = {}
+        for i,j in self.cnt.iteritems():
+            total = 0
+            for k, cnt in j.iteritems():
+                total += cnt
+            avg = total/len(self.candi[i])
+            for k,cnt in j.iteritems():
+                if cnt < avg:
+                    continue
+                random.seed()
+                p = random.random()
+                if avg < cnt or (cnt-Defines.general_busy)*1.5/(Defines.general_max-Defines.general_busy) > p:
+                    ret.add(k)
+                    tp[k] = i
+        return ret,tp
 
     def checkOverflow(self):
         mbLst = []
         for i,j in self.cnt.iteritems():
             overflow = False
             for k,cnt in j.iteritems():
-                if cnt > Defines.general_max:
+                Debug.debug('type %d pool %d cnt %d' %(i, k, cnt))
+                if cnt > Defines.general_busy*2:
                     overflow = True
-            mbLst.append(i)
+            if overflow:
+                Debug.debug('mb type %d overflow' % i)
+                mbLst.append(i)
+        return mbLst
+
+    def getCandi(self):
+        cnt = 0
+        for lst in self.candi:
+            cnt += len(lst)
+        f = open('cnt'+ str(self.seq), 'w')
+        f.write('%d' % cnt)
+        f.close()
+        return cnt
+            
+    def checkOverflowByDelay(self, retLst):
+        self.checkOverflow()
+        totalCnt = [0.0]*Defines.mb_type 
+        overCnt = [0.0]*Defines.mb_type
+        for flow, retPath, retDis in retLst:
+            dis = retDis
+            for i,mbID in enumerate(retPath[1:-1]):
+                dis += self.topo.nd[mbID].getMBDelay(flow.proc[i], self.cnt[flow.proc[i]][mbID])
+            for mb in flow.proc:
+                totalCnt[mb] +=1
+            if dis > Defines.max_delay:
+                for mb in flow.proc:
+                    overCnt[mb] += 1
+        mbNum = [0]* Defines.mb_type
+        for idx, lst in enumerate(self.candi):
+            mbNum[idx] = len(lst)
+        mbLst = []
+        for i in range(Defines.mb_type):
+            if overCnt[i]/totalCnt[i] > Defines.max_delay_ratio and totalCnt[i] > Defines.general_busy*mbNum[i] :
+                mbLst.append(i)   
+        return mbLst 
+
 
     def checkOverDelay(self, retLst):
+        self.seq += 1
+        self.getCandi()
+        f = open('delay'+str(self.seq), 'w')
         totalCnt = len(retLst)*1.0
         overCnt = 0.0
         for flow, retPath, retDis in retLst:
             dis = retDis
             for i,mbID in enumerate(retPath[1:-1]):
-                Debug.debug(self.topo.nd[mbID].getMBDelay(flow.proc[i], self.cnt[flow.proc[i]][mbID]))
                 dis += self.topo.nd[mbID].getMBDelay(flow.proc[i], self.cnt[flow.proc[i]][mbID])
-            if retDis > Defines.max_delay:
+            f.write('%d %d %d\n' % ( flow.src, flow.dst, dis))
+            if dis > Defines.max_delay:
                 overCnt += 1
         Debug.debug('over delay ratio:',overCnt/totalCnt)
+        f.close()
         return overCnt/totalCnt
 
     def prepair(self):
@@ -177,6 +258,8 @@ class MDP(BaseAlg):
 
     def singleMDP(self, flow, mask = set([])):
         #self.singleTable = make2dList(mbCnt, Defines.mb_max_num, [-1, Defines.INF])
+        #mask = set([])
+        Debug.debug('mdp set', mask)
         self.singleTable = TwoDMap()
         proc = flow.proc
         if len(proc) <= 0:
@@ -201,9 +284,11 @@ class MDP(BaseAlg):
         lastmb = proc[-1]
         finalDis = Defines.INF
         finalmbidx = -1
-        finalmb = 0
+        finalmb = -1
         for idx, candi in enumerate(self.candi[lastmb]):
             if candi in mask:
+                continue
+            if not self.singleTable.has_key(lastmb, candi):
                 continue
             if finalDis > self.singleTable[lastmb][candi][1] + self.topo.getDis(candi, flow.dst):
                 finalDis = self.singleTable[lastmb][candi][1] + self.topo.getDis(candi , flow.dst)
@@ -211,6 +296,8 @@ class MDP(BaseAlg):
                 finalmb = candi
         path = []
         #stidx = finalmbidx
+        if finalmb == -1:
+            return [], Defines.INF
         st = finalmb
         path.append(flow.dst)
         path.append(st)
@@ -254,8 +341,9 @@ class QuokkaAlg(BaseAlg):
         for i,j in self.flowMap.table.iteritems():
             for k,flow in j.iteritems():
                 for mb in flow.proc:
-                    self.minReq[mb] += 1
+                    self.minReq[mb] += flow.size 
         for mb in range(Defines.mb_type):
+            Debug.debug('raw req', self.minReq[mb])
             self.minReq[mb] /= Defines.general_max
             self.minReq[mb] += 1
             if self.minReq[mb] > Defines.mb_max_num:
@@ -271,7 +359,7 @@ class QuokkaAlg(BaseAlg):
             self.mdp.setPara(pla)
             retLst = self.mdp.run()
             if self.mdp.checkOverDelay(retLst) > Defines.max_delay_ratio:
-                addLst = self.mdp.checkCnt()
+                addLst = self.mdp.checkOverflowByDelay(retLst)
                 for addItem in addLst:
                     self.minReq[addItem] += Defines.mb_add_step
             else:

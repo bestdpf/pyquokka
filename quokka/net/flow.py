@@ -19,6 +19,12 @@ class Flow(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+    
+    def __repr__(self):
+        return 'flow\t' + self.__str__()
+
+    def __str__(self):
+        return 'src %d dst %d size %d req %s' % (self.src, self.dst, self.size, self.proc)
 
 class FlowMap(object):
 
