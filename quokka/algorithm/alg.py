@@ -192,7 +192,7 @@ class MDP(BaseAlg):
 
     def checkOverflow(self):
         mbLst = []
-        f = open('qlbminflownum' + str(self.seq), 'w')
+        f = open('flownum' + str(self.seq), 'w')
         for i,j in self.cnt.iteritems():
             overflow = False
             for k,cnt in j.iteritems():

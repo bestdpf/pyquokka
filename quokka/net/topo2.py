@@ -161,6 +161,18 @@ class Topology(object):
         self.addIsolateMB(MBID)
         self.addEdge(MBID, poolID, delay=0)
 
+    def addEndNode(self, hostRatio):
+        st = 2*len(self.switch)
+        #self.hostID =  st:(st + len(self.switch)* Defines.topo_host_num)
+        seed()
+        for sw in self.switch:
+            for idx in range(Defines.topo_host_num):
+                p = random()
+                if p < hostRatio:
+                    self.addHost(st, sw, Defines.topo_delay)
+                else:
+                    self.addPool(st, sw, Defines.topo_delay)
+                st += 1
     """
     def addNode(self, ndType, ndID):
         if ndType not in ['switch', 'host', 'pool', 'MB']:
