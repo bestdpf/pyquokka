@@ -39,7 +39,7 @@ class Defines(object):
     mb_max_num = 100 
     mb_type = 5
     mb_add_step = 1
-    max_delay = 250 
+    max_delay = 350 
     max_delay_ratio = 0.01
     max_chain_len = 5
     mb_lst = ['firewall', 'nat', 'ids', 'gateway', 'proxy']

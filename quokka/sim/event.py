@@ -29,7 +29,7 @@ class Event(object):
         self.alg = FFAlg()
         self.alg.setFlowMap(self.flowMap)
         self.alg.setTopo(self.topo)
-        numLst = [4, 4, 4, 4, 4]
+        numLst = [ 3, 3, 3, 3, 3]
         self.alg.setPara(numLst)
         mdp = self.alg.run()
         return mdp
@@ -42,7 +42,7 @@ class Event(object):
         self.alg = FLBAlg()
         self.alg.setFlowMap(self.flowMap)
         self.alg.setTopo(self.topo)
-        numLst = [4, 4, 4, 4, 4]
+        numLst = [3, 3, 3, 3, 3]
         self.alg.setPara(numLst)
         mdp = self.alg.run()
         return mdp
@@ -69,7 +69,8 @@ class Event(object):
         seed()
         idx = randint(0, len(self.topo.host)-1)
         return self.topo.host[idx]
-    
+   
+    """ 
     def getRandOutNode(self):
         "use for fatTree"
         seed()
@@ -81,7 +82,7 @@ class Event(object):
         seed()
         idx = randint(0, len(self.topo.switch) -1)
         return self.topo.switch[idx]        
-    """
+    
     def getRandFlowSize(self):
         seed()
         p = random()
@@ -106,7 +107,7 @@ class Event(object):
                 val = float(val)
                 if val != 0:
                     Debug.debug('edge from %d to %d %d' % (idx1, idx2, val))
-                    topo.addEdge(idx1, idx2, val)#Defines.topo_delay
+                    topo.addEdge(idx1, idx2, val)#Defines.topo_delay)
                     edgeCnt += 1
         f.close()
         Debug.debug('edge cnt %d in %s' %( edgeCnt, filePath))
@@ -114,7 +115,7 @@ class Event(object):
 
     def getTopo(self):
         # FatTree, k = 16, delay = 5
-        return  FatTree(16, Defines.fattree_delay)
+        #return  FatTree(16, Defines.fattree_delay)
         #return self.readTopoGML('Cernet.txt', 41)
         #return self.readTopoGML('Carnet.txt', 44)
-        #return self.readTopoGML('as2914.txt', 70)
+        return self.readTopoGML('as2914.txt', 70)
