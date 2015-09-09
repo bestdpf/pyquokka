@@ -60,6 +60,7 @@ class Topology(object):
             
 
     def calcShortestPath(self):
+        Debug.debug('calc shortest path')
         self.switchDis = TwoDMap() 
         #Floyd-Warshall Algorithm
         for switchID in self.switch:

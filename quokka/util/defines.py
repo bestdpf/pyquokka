@@ -31,6 +31,8 @@ class Defines(object):
 
     INF = 1000000000
 
+    
+    random_max_delay = 10
     fattree_delay = 2 
     topo_delay = 2
     topo_host_num = 10   
@@ -53,3 +55,13 @@ class Defines(object):
     hostRatio = 0.8
 
     flow_num = 2000
+
+class DCDefines(Defines):
+    dcOutFlowRatio = 0.75
+    dcRealTimeRatio = 0.50
+    dcSoftRealTimeRatio = 0.60
+    dcNoneRealTimeRatio = 1.00
+    dcRealTimeLatency = 150
+    dcSoftRealTimeLatency = 300
+    dcNoneRealTimeLatency = 1000
+

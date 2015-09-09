@@ -138,7 +138,9 @@ class FLBAlg(BaseAlg):
                 dis += self.topo.nd[mbID].getMBDelay(flow.proc[i], self.cnt[flow.proc[i]][mbID])
             for mb in flow.proc:
                 totalCnt[mb] +=1
-            if dis > Defines.max_delay:
+            
+            #if dis > Defines.max_delay:
+            if dis > flow.lat:
                 for mb in flow.proc:
                     overCnt[mb] += 1
         mbNum = [0]* Defines.mb_type
@@ -161,8 +163,12 @@ class FLBAlg(BaseAlg):
             dis = retDis
             for i,mbID in enumerate(retPath[1:-1]):
                 dis += self.topo.nd[mbID].getMBDelay(flow.proc[i], self.cnt[flow.proc[i]][mbID])
-            f.write('%d %d %d\n' % ( flow.src, flow.dst, dis))
-            if dis > Defines.max_delay:
+            f.write('%d %d %d %d\n' % ( flow.src, flow.dst, dis, flow.lat))
+            #if dis > Defines.max_delay:
+            """
+            data center change here
+            """
+            if dis > flow.lat:
                 overCnt += 1
         Debug.debug('over delay ratio:',overCnt/totalCnt)
         f.close()

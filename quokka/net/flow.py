@@ -9,6 +9,13 @@ class Flow(object):
         self.dst = dst
         self.size = size
         self.proc = proc
+    
+    def __init__(self, src, dst, size, proc, lat):
+        self.src = src 
+        self.dst = dst
+        self.size = size
+        self.proc = proc
+        self.lat = lat
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -38,6 +45,9 @@ class FlowMap(object):
 
     def addFlow(self, src, dst, size, proc  ):
         self.table[src][dst] = Flow(src, dst, size, proc)
+
+    def addFlow(self, src, dst, size, proc, lat):
+        self.table[src][dst] = Flow(src, dst, size, proc, lat)
 
     def isFlowExist(self, src, dst):
         #return self.table[src][dst] != self.__table__()

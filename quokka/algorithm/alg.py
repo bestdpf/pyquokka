@@ -71,7 +71,10 @@ class KLevel(BaseAlg):
                         for srci in src:
                             if srci != poolID:
                                 dis = self.topo.getDis(srci, poolID)
-                                self.score[idx][mb] += flow.size*1000.0/math.log(dis)
+                                """
+                                data center change here, from math.log(dis) to math.log(dis*flow.lat)
+                                """
+                                self.score[idx][mb] += flow.size*1000.0/math.log(dis*flow.lat)
 
     def select(self):
         """
@@ -139,7 +142,10 @@ class MDP(BaseAlg):
         for i,j in self.flowMap.table.iteritems():
             for k, flow in j.iteritems():
                 path,dis = self.singleMDP(flow, set([]))
-                lst.append([flow, path, dis])
+                """
+                data center change here, from dis to dis*flow.lat
+                """
+                lst.append([flow, path, dis*flow.lat])
         lst.sort(key = lambda ele: ele[2], reverse = True)
         retLst = []
         for flow,path,dis in lst:
@@ -225,7 +231,8 @@ class MDP(BaseAlg):
                 dis += self.topo.nd[mbID].getMBDelay(flow.proc[i], self.cnt[flow.proc[i]][mbID])
             for mb in flow.proc:
                 totalCnt[mb] +=1
-            if dis > Defines.max_delay:
+            #if dis > Defines.max_delay:
+            if dis > flow.lat:
                 for mb in flow.proc:
                     overCnt[mb] += 1
         mbNum = [0]* Defines.mb_type
@@ -248,8 +255,9 @@ class MDP(BaseAlg):
             dis = retDis
             for i,mbID in enumerate(retPath[1:-1]):
                 dis += self.topo.nd[mbID].getMBDelay(flow.proc[i], self.cnt[flow.proc[i]][mbID])
-            f.write('%d %d %d\n' % ( flow.src, flow.dst, dis))
-            if dis > Defines.max_delay:
+            f.write('%d %d %d %d\n' % ( flow.src, flow.dst, dis, flow.lat))
+            #if dis > Defines.max_delay:
+            if dis > flow.lat:
                 overCnt += 1
         Debug.debug('over delay ratio:',overCnt/totalCnt)
         f.close()
@@ -262,7 +270,7 @@ class MDP(BaseAlg):
     def singleMDP(self, flow, mask = set([])):
         #self.singleTable = make2dList(mbCnt, Defines.mb_max_num, [-1, Defines.INF])
         #mask = set([])
-        Debug.debug('mdp set', mask)
+        #Debug.debug('mdp set', mask)
         self.singleTable = TwoDMap()
         proc = flow.proc
         if len(proc) <= 0:

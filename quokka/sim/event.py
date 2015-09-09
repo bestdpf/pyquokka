@@ -29,7 +29,7 @@ class Event(object):
         self.alg = FFAlg()
         self.alg.setFlowMap(self.flowMap)
         self.alg.setTopo(self.topo)
-        numLst = [ 3, 3, 3, 3, 3]
+        numLst = [ 5, 5, 5, 5, 5]
         self.alg.setPara(numLst)
         mdp = self.alg.run()
         return mdp
@@ -42,12 +42,14 @@ class Event(object):
         self.alg = FLBAlg()
         self.alg.setFlowMap(self.flowMap)
         self.alg.setTopo(self.topo)
-        numLst = [3, 3, 3, 3, 3]
+        numLst = [5, 5, 5, 5, 5]
         self.alg.setPara(numLst)
         mdp = self.alg.run()
         return mdp
        
     def getFlowMap(self):
+        return self.getDCFlowMap()
+        """
         flowMap = FlowMap()
         for i in range(0, Defines.flow_num):
             src = self.getRandHost()
@@ -63,6 +65,25 @@ class Event(object):
                 ruleID = randint(0,4)
                 rule = self.rule[ruleID]
                 flowMap.addFlow(src, dst, size = 1,proc = rule)
+        return flowMap
+        """
+
+    def getDCFlowMap(self):
+        flowMap = FlowMap()
+        for i in range(0,DCDefines.flow_num):
+            src = self.getRandHost()
+            seed()
+            ifOut = random()
+            if ifOut < DCDefines.dcOutFlowRatio:
+                dst = self.getRandOutNode()
+            else:
+                dst = self.getRandHost()
+            if flowMap.isFlowExist(src, dst):
+                continue
+            else:
+                ruleID = randint(0,4)
+                rule = self.rule[ruleID]
+                flowMap.addFlow(src, dst, size = 1, proc = rule, lat = self.getRandFlowLatency())
         return flowMap
 
     def getRandHost(self):
@@ -84,6 +105,10 @@ class Event(object):
         return self.topo.switch[idx]        
     
     def getRandFlowSize(self):
+        """
+        To Do p should be [0,100], not [0,1]
+        and do not forget Defines.
+        """
         seed()
         p = random()
         if p < shortSmallRatio:
@@ -96,7 +121,24 @@ class Event(object):
             size = 10
         return size
 
-    def readTopoGML(self, filePath, ndCnt):
+    def getRandomDis(self, n):
+        seed()
+        p = random()
+        return p*n
+
+
+    def getRandFlowLatency(self):
+        seed()
+        p = random()
+        if p < DCDefines.dcRealTimeRatio:
+            lat = DCDefines.dcRealTimeLatency
+        elif p < DCDefines.dcSoftRealTimeRatio:
+            lat = DCDefines.dcSoftRealTimeLatency
+        else:
+            lat = DCDefines.dcNoneRealTimeLatency
+        return lat
+
+    def readTopoGML(self, filePath, ndCnt, rand = False):
         topo = Topology()
         for sw in range(ndCnt):
             topo.addIsolateSwitch(sw)
@@ -106,6 +148,8 @@ class Event(object):
             for idx2,val in enumerate(line.split()):
                 val = float(val)
                 if val != 0:
+                    if rand:
+                        val = self.getRandomDis(Defines.random_max_delay)
                     Debug.debug('edge from %d to %d %d' % (idx1, idx2, val))
                     topo.addEdge(idx1, idx2, val)#Defines.topo_delay)
                     edgeCnt += 1
@@ -116,6 +160,6 @@ class Event(object):
     def getTopo(self):
         # FatTree, k = 16, delay = 5
         #return  FatTree(16, Defines.fattree_delay)
-        #return self.readTopoGML('Cernet.txt', 41)
-        #return self.readTopoGML('Carnet.txt', 44)
-        return self.readTopoGML('as2914.txt', 70)
+        #return self.readTopoGML('Cernet.txt', 41, True)
+        return self.readTopoGML('Carnet.txt', 44, True)
+        #return self.readTopoGML('as2914.txt', 70)
