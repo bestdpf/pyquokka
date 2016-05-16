@@ -7,10 +7,23 @@ from quokka.algorithm.algFF import FFAlg
 from quokka.algorithm.algFLB import FLBAlg
 class Event(object):
 
-    def __init__(self):
+    def __init__(self, algName = 'quokka', topoName = 'fattree'):
+        self.algName = algName
+        self.topoName = topoName
         self.rule = [[0,1,2,3,4], [0, 1, 2], [0, 3, 4], [0, 1, 4], [0, 2, 3]]
 
+
     def run(self):
+        if self.algName == 'quokka':
+            return self.runQuokka()
+        elif self.algName == 'flb':
+            return self.runFLB()
+        elif self.algName == 'ff':
+            return self.runFF()
+        else:
+            return None,None
+
+    def runQuokka(self):
         self.topo = self.getTopo()
         self.topo.addEndNode(Defines.hostRatio)
         Debug.debug('pool', self.topo.pool)
@@ -32,7 +45,7 @@ class Event(object):
         numLst = [ 5, 5, 5, 5, 5]
         self.alg.setPara(numLst)
         mdp = self.alg.run()
-        return mdp
+        return None,mdp
  
     def runFLB(self):
         self.topo = self.getTopo()
@@ -45,7 +58,7 @@ class Event(object):
         numLst = [5, 5, 5, 5, 5]
         self.alg.setPara(numLst)
         mdp = self.alg.run()
-        return mdp
+        return None, mdp
        
     def getFlowMap(self):
         return self.getDCFlowMap()
@@ -159,7 +172,17 @@ class Event(object):
 
     def getTopo(self):
         # FatTree, k = 16, delay = 5
+        if self.topoName == 'fattree':
+            return FatTree(16,Defines.fattree_delay)
+        elif self.topoName == 'cernet':
+            return self.readTopoGML('Cernet.txt',41,True)
+        elif self.topoName == 'carnet':
+            return self.readTopoGML('Carnet.txt',44,True)
+        elif self.topName == 'as2914':
+            return self.readTopoGML('as2914.txt',70)
+        else:
+            return None
         #return  FatTree(16, Defines.fattree_delay)
         #return self.readTopoGML('Cernet.txt', 41, True)
-        return self.readTopoGML('Carnet.txt', 44, True)
+        #return self.readTopoGML('Carnet.txt', 44, True)#return self.readTopoGML('as2914.txt', 70)
         #return self.readTopoGML('as2914.txt', 70)
